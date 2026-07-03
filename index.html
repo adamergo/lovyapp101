@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lovyapp</title>
+<link rel="stylesheet" href="https://unicons.iconscout.com/release/v2.1.6/css/unicons.css">
+<!-- STYLESHEET -->
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+<!-- BACKEND UNREACHABLE WARNING -->
+<div class="backend-warning" id="backend-warning">
+<i class="uil uil-exclamation-triangle"></i>
+<span>Can't reach the LovyApp server. This page needs to be opened from the Node backend, not Live Server &mdash; run <code>npm start</code> in <code>backend/</code>, then visit <code>http://localhost:3000</code>.</span>
+</div>
+<nav>
+<div class="container">
+<h2 class="log">LovyApp</h2>
+<div class="search-bar">
+<i class="uil uil-search"></i>
+<input type="search" placeholder="search for creators, inspirations, and projects">
+</div>
+<button class="btn btn-primary" id="open-create-post">create</button>
+<div class="nav-profile" id="nav-profile">
+<div class="profile-photo">
+<img id="nav-profile-photo" src="pfp.jpg" alt="Profile picture" width="200">
+</div>
+<div class="nav-profile-menu" id="nav-profile-menu">
+<button id="logout-btn"><i class="uil uil-signout"></i> Log Out</button>
+</div>
+</div>
+</div>
+</nav>
+<main>
+<div class="container">
+<!-- left -->
+<div class="left">
+<a class="profile">
+<div class="profile-photo">
+<img id="sidebar-profile-photo" src="pfp.jpg" alt="Profile picture">
+</div>
+<div class="handle">
+<h4 id="sidebar-profile-name">Loading...</h4>
+<p class="text-muted" id="sidebar-profile-handle"></p>
+</div>
+</a>
+<!-- SIDEBAR -->
+<div class="sidebar">
+<a class="menu item active" id="nav-home">
+<span><i class="uil uil-home"></i></span><h3>Home</h3>
+</a>
+<a class="menu item" id="nav-explore">
+<span><i class="uil uil-compass"></i></span><h3>Explore</h3>
+</a>
+<a class="menu item" id="notifications">
+<span><i class="uil uil-bell"><small class="notification-count"></small></i></span><h3>Notifications</h3>
+<!-- NOTIFICATIONS POPUP -->
+<div class="notifications-popup">
+</div>
+</a>
+<a class="menu item" id="nav-messages">
+<span><i class="uil uil-envelope-alt"><small class="notification-count"></small></i></span><h3>Messages</h3>
+</a>
+<a class="menu item" id="nav-bookmarks">
+<span><i class="uil uil-bookmark"></i></span><h3>Bookmarks</h3>
+</a>
+<a class="menu item" id="nav-analytics">
+<span><i class="uil uil-chart-line"></i></span><h3>Analytics</h3>
+</a>
+<a class="menu item" id="theme">
+<span><i class="uil uil-palette"></i></span><h3>Theme</h3>
+<!-- THEME POPOVER -->
+<div class="theme-popover">
+</div>
+</a>
+<a class="menu item" id="open-settings">
+<span><i class="uil uil-setting"></i></span><h3>Settings</h3>
+</a>
+</div>
+<!--END OF SIDEBAR-->
+<button class="btn btn-primary" id="open-create-post-sidebar">Create Post</button>
+</div>
+<!-- middle -->
+<div class="middle">
+<!-- HOME VIEW -->
+<div class="view active" id="view-home">
+<!-- STORIES -->
+<div class="stories" id="stories"></div>
+<!-- SNAPS -->
+<div class="snaps-section">
+<div class="section-header">
+<h3>Snaps</h3>
+<span class="see-all">See all</span>
+</div>
+<div class="snaps" id="snaps"></div>
+</div>
+<!-- FEED -->
+<div class="feed-tabs">
+<button class="feed-tab active" data-mode="foryou">For You</button>
+<button class="feed-tab" data-mode="recent">Recent</button>
+</div>
+<div class="feed" id="feed"></div>
+</div>
+<!-- EXPLORE VIEW -->
+<div class="view" id="view-explore">
+<div class="section-header">
+<h3>Explore</h3>
+</div>
+<div class="explore-grid" id="explore-grid"></div>
+</div>
+<!-- BOOKMARKS VIEW -->
+<div class="view" id="view-bookmarks">
+<div class="section-header">
+<h3>Bookmarks</h3>
+</div>
+<div class="feed" id="bookmarks-feed"></div>
+</div>
+<!-- ANALYTICS VIEW -->
+<div class="view" id="view-analytics">
+<div class="section-header">
+<h3>Analytics</h3>
+</div>
+<div class="analytics-grid" id="analytics-grid"></div>
+</div>
+<!-- MESSAGES VIEW -->
+<div class="view" id="view-messages">
+<div class="messages-page">
+<div class="messages-page-list" id="messages-page-list"></div>
+<div class="messages-page-thread" id="messages-page-thread">
+<div class="popup-empty">Select a conversation to start chatting</div>
+</div>
+</div>
+</div>
+</div>
+<!-- right -->
+<div class="right">
+</div>
+</div>
+</main>
+<!-- STORY VIEWER -->
+<div class="story-viewer" id="story-viewer">
+<div class="story-viewer-inner">
+<div class="story-progress-bars" id="story-progress-bars"></div>
+<div class="story-viewer-header">
+<div class="profile-photo"><img id="story-viewer-avatar" src="" alt=""></div>
+<span id="story-viewer-name"></span>
+<span class="story-viewer-time" id="story-viewer-time"></span>
+<button class="story-close" id="story-close"><i class="uil uil-times"></i></button>
+</div>
+<img class="story-viewer-image" id="story-viewer-img" src="" alt="">
+<button class="story-nav story-prev" id="story-prev"><i class="uil uil-angle-left"></i></button>
+<button class="story-nav story-next" id="story-next"><i class="uil uil-angle-right"></i></button>
+</div>
+</div>
+<!-- SNAP VIEWER (TikTok-style) -->
+<div class="snap-viewer" id="snap-viewer">
+<button class="snap-viewer-close" id="snap-viewer-close"><i class="uil uil-times"></i></button>
+<div class="snap-viewer-track" id="snap-viewer-track"></div>
+<button class="snap-nav snap-prev" id="snap-prev"><i class="uil uil-angle-up"></i></button>
+<button class="snap-nav snap-next" id="snap-next"><i class="uil uil-angle-down"></i></button>
+</div>
+<!-- EXPLORE POST MODAL -->
+<div class="explore-post-modal" id="explore-post-modal">
+<div class="explore-post-modal-inner">
+<button class="explore-post-modal-close" id="explore-post-modal-close"><i class="uil uil-times"></i></button>
+<div id="explore-post-modal-content"></div>
+</div>
+</div>
+<!-- SETTINGS MODAL -->
+<div class="settings-modal" id="settings-modal">
+<div class="settings-modal-inner">
+<div class="settings-modal-header">
+<h3>Settings</h3>
+<button class="settings-close" id="settings-close"><i class="uil uil-times"></i></button>
+</div>
+<div class="settings-modal-body">
+<div class="settings-account-info">
+<h4 id="settings-name"></h4>
+<p class="text-muted" id="settings-handle"></p>
+<p class="text-muted" id="settings-email"></p>
+</div>
+<h4 class="settings-section-title">Change Password</h4>
+<div class="settings-error" id="settings-error"></div>
+<form id="settings-password-form" class="auth-form">
+<label>Current Password</label>
+<input type="password" id="settings-current-password" placeholder="Current password" required>
+<label>New Password</label>
+<input type="password" id="settings-new-password" placeholder="At least 6 characters" required>
+<label>Confirm New Password</label>
+<input type="password" id="settings-confirm-password" placeholder="Repeat new password" required>
+<button type="submit" class="btn btn-primary auth-submit">Update Password</button>
+</form>
+</div>
+</div>
+</div>
+<!-- CREATE POST MODAL -->
+<div class="create-post-modal" id="create-post-modal">
+<div class="create-post-inner">
+<div class="create-post-header">
+<h3>Create Post</h3>
+<button class="create-post-close" id="create-post-close"><i class="uil uil-times"></i></button>
+</div>
+<div class="create-post-body">
+<div class="profile-photo"><img id="create-post-avatar" src="pfp.jpg" alt="Profile picture"></div>
+<textarea id="create-post-input" placeholder="What's on your mind?" maxlength="500"></textarea>
+</div>
+<div class="create-post-preview" id="create-post-preview">
+<img id="create-post-preview-img" src="" alt="">
+<div class="create-post-preview-remove" id="create-post-preview-remove"><i class="uil uil-times"></i></div>
+</div>
+<div class="create-post-footer">
+<label class="create-post-image-btn" for="create-post-file"><i class="uil uil-image-plus"></i> Photo</label>
+<input type="file" id="create-post-file" accept="image/*" hidden>
+<button class="btn btn-primary" id="create-post-submit">Post</button>
+</div>
+</div>
+</div>
+<!-- QUOTE POST MODAL -->
+<div class="quote-modal" id="quote-modal">
+<div class="quote-modal-inner">
+<div class="quote-modal-header">
+<h3>Quote Post</h3>
+<button class="quote-close" id="quote-close"><i class="uil uil-times"></i></button>
+</div>
+<div class="quote-modal-body">
+<div class="profile-photo"><img id="quote-modal-avatar" src="pfp.jpg" alt="Profile picture"></div>
+<textarea id="quote-input" placeholder="Add a comment..." maxlength="280"></textarea>
+</div>
+<div class="quote-embed-preview" id="quote-embed-preview"></div>
+<div class="quote-modal-footer">
+<span class="quote-char-count" id="quote-char-count">280</span>
+<button class="btn btn-primary" id="quote-submit">Post</button>
+</div>
+</div>
+</div>
+<!-- SHARE MODAL -->
+<div class="share-modal" id="share-modal">
+<div class="share-modal-inner">
+<div class="share-modal-header">
+<h3>Share</h3>
+<button class="share-close" id="share-close"><i class="uil uil-times"></i></button>
+</div>
+<div class="share-quick-actions">
+<button class="share-quick-btn" id="share-copy-link">
+<span class="share-quick-icon"><i class="uil uil-link"></i></span>
+<span>Copy Link</span>
+</button>
+<button class="share-quick-btn" id="share-add-story">
+<span class="share-quick-icon"><i class="uil uil-plus-circle"></i></span>
+<span>Add to Story</span>
+</button>
+</div>
+<div class="share-modal-title">Send to</div>
+<div class="share-contacts" id="share-contacts"></div>
+</div>
+</div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<input type="file" id="story-upload-input" accept="image/*" hidden>
+<script src="/socket.io/socket.io.js"></script>
+<script src="script.js" defer></script>
+</body>
+</html>

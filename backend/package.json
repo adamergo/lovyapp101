@@ -1,0 +1,21 @@
+{
+  "name": "lovyapp-backend",
+  "version": "1.0.0",
+  "description": "Backend server for LovyApp",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "cookie": "^0.7.2",
+    "cookie-parser": "^1.4.6",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.0",
+    "socket.io": "^4.7.5"
+  }
+}

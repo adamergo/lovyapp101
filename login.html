@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>lovyapp</title>
+<link rel="stylesheet" href="https://unicons.iconscout.com/release/v2.1.6/css/unicons.css">
+<link rel="stylesheet" href="index.css">
+</head>
+<body>
+<!-- BACKEND UNREACHABLE WARNING -->
+<div class="backend-warning" id="backend-warning">
+<i class="uil uil-exclamation-triangle"></i>
+<span>Can't reach the LovyApp server. This page needs to be opened from the Node backend, not Live Server &mdash; run <code>npm start</code> in <code>backend/</code>, then visit <code>http://localhost:3000</code>.</span>
+</div>
+<div class="auth-page">
+  <div class="auth-card">
+    <h2 class="log auth-logo">LovyApp</h2>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-form="login">Log In</button>
+      <button class="auth-tab" data-form="register">Sign Up</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <div class="auth-error" id="login-error"></div>
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" required>
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button type="submit" class="btn btn-primary auth-submit">Log In</button>
+      <p class="auth-hint">Demo account: diana@lovyapp.demo / password123</p>
+    </form>
+
+    <form id="register-form" class="auth-form" style="display:none">
+      <div class="auth-error" id="register-error"></div>
+      <label>Name</label>
+      <input type="text" id="register-name" placeholder="Your name" required>
+      <label>Handle</label>
+      <input type="text" id="register-handle" placeholder="username" required>
+      <label>Email</label>
+      <input type="email" id="register-email" placeholder="you@example.com" required>
+      <label>Password</label>
+      <input type="password" id="register-password" placeholder="At least 6 characters" required>
+      <button type="submit" class="btn btn-primary auth-submit">Create Account</button>
+    </form>
+  </div>
+</div>
+<script src="auth.js" defer></script>
+</body>
+</html>

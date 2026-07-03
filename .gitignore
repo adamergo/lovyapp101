@@ -1,0 +1,9 @@
+backend/node_modules/
+backend/lovyapp.db
+backend/lovyapp.db-shm
+backend/lovyapp.db-wal
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/.env
+.env
+.claude/

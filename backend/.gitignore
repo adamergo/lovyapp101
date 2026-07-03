@@ -1,0 +1,7 @@
+node_modules/
+lovyapp.db
+lovyapp.db-shm
+lovyapp.db-wal
+uploads/*
+!uploads/.gitkeep
+.env
