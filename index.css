@@ -2307,3 +2307,172 @@ flex-shrink: 0;
 background: var(--primary-color);
 color: #fff;
 }
+/*=======================================================
+  MOBILE VERSION (phones) — pure layout/CSS only.
+  Nothing above this line changes; desktop stays as-is.
+=========================================================*/
+@media (max-width: 768px) {
+  .container {
+    width: 94%;
+  }
+  /* ---- NAVBAR ---- */
+  nav {
+    padding: 0.5rem 0;
+  }
+  nav .container {
+    column-gap: 0.6rem;
+  }
+  nav .log {
+    font-size: 1.05rem;
+    flex-shrink: 0;
+  }
+  nav .search-bar {
+    flex: 1;
+    min-width: 0;
+  }
+  nav .search-bar input[type="search"] {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    margin-left: 0.6rem;
+  }
+  nav #open-create-post {
+    flex-shrink: 0;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.82rem;
+  }
+  nav .nav-profile {
+    flex-shrink: 0;
+  }
+  nav .nav-profile .profile-photo {
+    width: 2.2rem;
+  }
+  /* ---- MAIN LAYOUT: single column ---- */
+  main {
+    top: 4.6rem;
+    padding-bottom: 4.8rem;
+  }
+  main .container {
+    grid-template-columns: 1fr;
+    row-gap: 1.2rem;
+  }
+  /* right (suggestions) rail isn't needed on a phone screen */
+  main .container .right {
+    display: none;
+  }
+  /* ---- LEFT SIDEBAR -> BOTTOM TAB BAR ---- */
+  main .container .left {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    z-index: 50;
+  }
+  main .container .left .profile {
+    display: none;
+  }
+  main .container .left .btn {
+    display: none;
+  }
+  .left .sidebar {
+    margin-top: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    border-radius: 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    padding: 0.3rem 0.2rem;
+    row-gap: 0;
+  }
+  .left .sidebar .menu.item {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    height: auto;
+    padding: 0.3rem 0.1rem;
+    row-gap: 0.15rem;
+  }
+  .left .sidebar .menu.item h3 {
+    margin-left: 0;
+    font-size: 0.56rem;
+  }
+  .left .sidebar .menu.item span {
+    font-size: 1.2rem;
+  }
+  .left .sidebar .menu.item .notification-count {
+    top: -0.15rem;
+    right: 0.15rem;
+  }
+  /* popups anchored off sidebar items need repositioning since the
+     sidebar is now a slim bottom bar, not a tall left column */
+  .notifications-popup,
+  .theme-popover {
+    position: fixed;
+    top: auto;
+    left: 0.6rem;
+    right: 0.6rem;
+    bottom: 4.6rem;
+    width: auto;
+    max-height: 60vh;
+  }
+  /* ---- STORIES / SNAPS ---- */
+  .story {
+    width: 4.6rem;
+  }
+  .story .story-ring {
+    width: 4rem;
+  }
+  .snap {
+    width: 8.6rem;
+  }
+  /* ---- MESSAGES PAGE: stack list above thread ---- */
+  .messages-page {
+    flex-direction: column;
+    height: auto;
+    min-height: 0;
+  }
+  .messages-page-list {
+    width: 100%;
+    max-height: 38vh;
+  }
+  .messages-page-thread {
+    width: 100%;
+    min-height: 22rem;
+  }
+  /* ---- FLOATING WIDGETS: clear the bottom tab bar ---- */
+  .music-mini-player {
+    bottom: 4.8rem;
+  }
+  .toast {
+    bottom: 4.8rem;
+  }
+}
+@media (max-width: 420px) {
+  .container {
+    width: 96%;
+  }
+  nav .log {
+    font-size: 0.95rem;
+  }
+  nav #open-create-post {
+    padding: 0.45rem 0.65rem;
+    font-size: 0.78rem;
+  }
+  .snap {
+    width: 7.6rem;
+  }
+  .story {
+    width: 4.2rem;
+  }
+  .story .story-ring {
+    width: 3.6rem;
+  }
+  .auth-page {
+    padding: 1rem;
+  }
+  .auth-card {
+    padding: 1.4rem;
+  }
+}
