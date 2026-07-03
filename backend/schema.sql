@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS snaps (
   thumb TEXT NOT NULL,
   title TEXT NOT NULL,
   views INTEGER NOT NULL DEFAULT 0,
+  type TEXT NOT NULL DEFAULT 'image',
   created_at INTEGER NOT NULL
 );
 
@@ -135,7 +136,34 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS tracks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  uploader_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  artist TEXT NOT NULL,
+  cover TEXT,
+  audio TEXT NOT NULL,
+  plays INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS track_likes (
+  track_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (track_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS track_shares (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  track_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  to_user_id INTEGER,
+  created_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_posts_author ON posts(author_id);
 CREATE INDEX IF NOT EXISTS idx_messages_pair ON messages(sender_id, receiver_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_stories_user ON stories(user_id);
+CREATE INDEX IF NOT EXISTS idx_tracks_uploader ON tracks(uploader_id);

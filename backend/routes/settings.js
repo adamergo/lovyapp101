@@ -6,7 +6,17 @@ const { publicUser } = require("../helpers/user");
 
 const router = express.Router();
 
-const ALLOWED_THEMES = new Set(["light", "dark", "sunset", "ocean", "forest"]);
+const ALLOWED_THEMES = new Set([
+  "light",
+  "dark",
+  "sunset",
+  "ocean",
+  "forest",
+  "dark-pink",
+  "dark-purple",
+  "dark-green",
+  "dark-red",
+]);
 
 router.post("/theme", requireAuth, (req, res) => {
   const { theme } = req.body || {};

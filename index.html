@@ -66,6 +66,9 @@
 <a class="menu item" id="nav-bookmarks">
 <span><i class="uil uil-bookmark"></i></span><h3>Bookmarks</h3>
 </a>
+<a class="menu item" id="nav-music">
+<span><i class="uil uil-music-tune"></i></span><h3>Music</h3>
+</a>
 <a class="menu item" id="nav-analytics">
 <span><i class="uil uil-chart-line"></i></span><h3>Analytics</h3>
 </a>
@@ -88,11 +91,13 @@
 <div class="view active" id="view-home">
 <!-- STORIES -->
 <div class="stories" id="stories"></div>
-<!-- SNAPS -->
+<!-- SNAPS / REELS -->
 <div class="snaps-section">
 <div class="section-header">
-<h3>Snaps</h3>
-<span class="see-all">See all</span>
+<h3>Reels</h3>
+<div class="section-header-actions">
+<span class="see-all" id="open-create-reel"><i class="uil uil-plus-circle"></i> Create Reel</span>
+</div>
 </div>
 <div class="snaps" id="snaps"></div>
 </div>
@@ -123,6 +128,20 @@
 <h3>Analytics</h3>
 </div>
 <div class="analytics-grid" id="analytics-grid"></div>
+</div>
+<!-- MUSIC FYP VIEW -->
+<div class="view" id="view-music">
+<div class="section-header">
+<h3>Music</h3>
+<div class="section-header-actions">
+<span class="see-all" id="open-create-track"><i class="uil uil-plus-circle"></i> Share Music</span>
+</div>
+</div>
+<div class="feed-tabs">
+<button class="feed-tab active" data-music-mode="fyp">For You</button>
+<button class="feed-tab" data-music-mode="recent">Recent</button>
+</div>
+<div class="music-feed" id="music-feed"></div>
 </div>
 <!-- MESSAGES VIEW -->
 <div class="view" id="view-messages">
@@ -216,6 +235,61 @@
 <button class="btn btn-primary" id="create-post-submit">Post</button>
 </div>
 </div>
+</div>
+<!-- CREATE REEL MODAL -->
+<div class="create-reel-modal" id="create-reel-modal">
+<div class="create-reel-inner">
+<div class="create-reel-header">
+<h3>Create Reel</h3>
+<button class="create-reel-close" id="create-reel-close"><i class="uil uil-times"></i></button>
+</div>
+<div class="create-reel-body">
+<input type="text" id="create-reel-title" placeholder="Give your reel a title" maxlength="120">
+</div>
+<div class="create-reel-preview" id="create-reel-preview">
+<video id="create-reel-preview-video" muted loop playsinline></video>
+<img id="create-reel-preview-img" src="" alt="">
+<div class="create-reel-preview-remove" id="create-reel-preview-remove"><i class="uil uil-times"></i></div>
+</div>
+<div class="create-reel-footer">
+<label class="create-reel-file-btn" for="create-reel-file"><i class="uil uil-video-plus"></i> Video/Photo</label>
+<input type="file" id="create-reel-file" accept="video/*,image/*" hidden>
+<button class="btn btn-primary" id="create-reel-submit">Post Reel</button>
+</div>
+</div>
+</div>
+<!-- CREATE / SHARE TRACK MODAL -->
+<div class="create-track-modal" id="create-track-modal">
+<div class="create-track-inner">
+<div class="create-track-header">
+<h3>Share Music</h3>
+<button class="create-track-close" id="create-track-close"><i class="uil uil-times"></i></button>
+</div>
+<div class="create-track-body">
+<input type="text" id="create-track-title" placeholder="Track title" maxlength="80">
+<input type="text" id="create-track-artist" placeholder="Artist name (optional)" maxlength="80">
+<label class="create-track-file-btn" for="create-track-audio-file"><i class="uil uil-music"></i> <span id="create-track-audio-label">Upload audio</span></label>
+<input type="file" id="create-track-audio-file" accept="audio/*" hidden>
+<label class="create-track-file-btn" for="create-track-cover-file"><i class="uil uil-image-plus"></i> <span id="create-track-cover-label">Add cover art (optional)</span></label>
+<input type="file" id="create-track-cover-file" accept="image/*" hidden>
+<div class="create-track-preview" id="create-track-preview">
+<img id="create-track-preview-img" src="" alt="">
+</div>
+</div>
+<div class="create-track-footer">
+<button class="btn btn-primary" id="create-track-submit">Share</button>
+</div>
+</div>
+</div>
+<!-- MUSIC MINI PLAYER -->
+<div class="music-mini-player" id="music-mini-player">
+<div class="music-mini-cover"><img id="music-mini-cover-img" src="" alt=""></div>
+<div class="music-mini-info">
+<span class="music-mini-title" id="music-mini-title"></span>
+<span class="music-mini-artist" id="music-mini-artist"></span>
+</div>
+<button class="music-mini-toggle" id="music-mini-toggle"><i class="uil uil-pause"></i></button>
+<button class="music-mini-close" id="music-mini-close"><i class="uil uil-times"></i></button>
 </div>
 <!-- QUOTE POST MODAL -->
 <div class="quote-modal" id="quote-modal">

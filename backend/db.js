@@ -20,6 +20,13 @@ try {
   if (!/duplicate column/i.test(err.message)) throw err;
 }
 
+// Defensive migration for databases created before reels (video snaps) existed.
+try {
+  db.exec("ALTER TABLE snaps ADD COLUMN type TEXT NOT NULL DEFAULT 'image'");
+} catch (err) {
+  if (!/duplicate column/i.test(err.message)) throw err;
+}
+
 if (isNewDb) {
   seed();
 }
@@ -116,6 +123,26 @@ function seed() {
     const likeCount = [340, 95, 610, 48, 220][i] || 10;
     for (let n = 0; n < Math.min(likeCount, allUserIds.length); n++) {
       insertSnapLike.run(snapId, allUserIds[n], now);
+    }
+  });
+
+  const insertTrack = db.prepare(
+    `INSERT INTO tracks (uploader_id, title, artist, cover, audio, plays, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  );
+  const trackIds = [
+    { user: diana, title: "Golden Hour", artist: "Diana Ayi", cover: "/media/wallpaper.jpg", audio: "/media/golden-hour.mp3", plays: 18400 },
+    { user: cody, title: "Studio Loop", artist: "Cody Fisher", cover: "/media/insta.jpg", audio: "/media/studio-loop.mp3", plays: 9200 },
+    { user: jenny, title: "Night Drive", artist: "Jenny Wilson", cover: "/media/pfp.jpg", audio: "/media/night-drive.mp3", plays: 26100 },
+    { user: robert, title: "Quiet Mornings", artist: "Robert Fox", cover: "/media/wallpaper.jpg", audio: "/media/quiet-mornings.mp3", plays: 4300 },
+  ].map((t) => insertTrack.run(t.user, t.title, t.artist, t.cover, t.audio, t.plays, now).lastInsertRowid);
+
+  const insertTrackLike = db.prepare(
+    `INSERT OR IGNORE INTO track_likes (track_id, user_id, created_at) VALUES (?, ?, ?)`
+  );
+  trackIds.forEach((trackId, i) => {
+    const likeCount = [420, 130, 610, 55][i] || 10;
+    for (let n = 0; n < Math.min(likeCount, allUserIds.length); n++) {
+      insertTrackLike.run(trackId, allUserIds[n], now);
     }
   });
 

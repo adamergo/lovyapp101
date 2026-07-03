@@ -17,10 +17,17 @@ let threadCache = null;
 let pendingPostImage = "";
 let sharingTarget = null; // { type: "post" | "snap", id }
 let socket = null;
-let currentView = "home"; // "home" | "explore" | "bookmarks" | "analytics" | "messages"
+let currentView = "home"; // "home" | "explore" | "bookmarks" | "analytics" | "messages" | "music"
 let exploreData = [];
 let bookmarksData = [];
 let explorePostModalId = null;
+let pendingReelMedia = null; // { url, kind }
+let musicData = [];
+let musicMode = "fyp";
+let pendingTrackAudio = null; // { url, kind }
+let pendingTrackCover = "";
+let currentTrackId = null;
+const musicAudio = new Audio();
 
 // ============ API HELPERS ============
 function backendUnreachableError() {
@@ -79,6 +86,22 @@ async function uploadImage(file) {
   return data.url;
 }
 
+// Generic upload for reels (image/video) and music (audio/cover image); returns
+// both the stored URL and the detected media kind so the caller can render the
+// right preview element (<img> vs <video>) without guessing from the extension.
+async function uploadMedia(file) {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/upload/media", { method: "POST", credentials: "include", body: form });
+  if (res.status === 401) {
+    window.location.href = "login.html";
+    throw new Error("Not authenticated");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Upload failed");
+  return { url: data.url, kind: data.kind };
+}
+
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str == null ? "" : String(str);
@@ -135,6 +158,12 @@ async function loadStories() {
 }
 
 // ============ RENDER: SNAPS (thumbnail row) ============
+function snapMediaHtml(s) {
+  return s.type === "video"
+    ? `<video src="${s.thumb}" muted loop playsinline autoplay></video>`
+    : `<img src="${s.thumb}" alt="${escapeHtml(s.title)}">`;
+}
+
 function renderSnaps() {
   const el = document.getElementById("snaps");
   if (!el) return;
@@ -142,7 +171,7 @@ function renderSnaps() {
     .map(
       (s) => `
     <div class="snap" data-id="${s.id}">
-      <img src="${s.thumb}" alt="${escapeHtml(s.title)}">
+      ${snapMediaHtml(s)}
       <div class="snap-thumb-overlay"></div>
       <i class="uil uil-play snap-play-icon"></i>
       <div class="snap-thumb-info">
@@ -159,16 +188,20 @@ function renderSnaps() {
 }
 
 async function loadSnaps() {
-  const { snaps } = await api("/snaps");
+  const { snaps } = await api("/snaps?mode=fyp");
   snapsData = snaps;
   renderSnaps();
 }
 
 // ============ SNAP VIEWER (TikTok-style) ============
 function snapSlideHtml(s) {
+  const media =
+    s.type === "video"
+      ? `<video src="${s.thumb}" muted loop playsinline></video>`
+      : `<img src="${s.thumb}" alt="${escapeHtml(s.title)}">`;
   return `
     <div class="snap-slide" data-id="${s.id}">
-      <img src="${s.thumb}" alt="${escapeHtml(s.title)}">
+      ${media}
       <div class="snap-slide-gradient"></div>
       <div class="snap-info">
         <div class="snap-author">
@@ -177,6 +210,7 @@ function snapSlideHtml(s) {
         </div>
         <div class="snap-title">${escapeHtml(s.title)}</div>
         <div class="snap-views"><i class="uil uil-play"></i> ${escapeHtml(s.views)} views</div>
+        ${s.badge ? `<div class="music-badge"><i class="uil ${s.badge.icon}"></i> ${escapeHtml(s.badge.label)}</div>` : ""}
       </div>
       <div class="snap-actions">
         <button class="snap-action-btn like-action${s.liked ? " liked" : ""}"><i class="uil uil-heart"></i><span>${s.likes}</span></button>
@@ -239,7 +273,16 @@ function patchSnap(updated) {
 
 function setActiveSnapVisual(index) {
   const slides = document.querySelectorAll("#snap-viewer-track .snap-slide");
-  slides.forEach((slide, i) => slide.classList.toggle("active", i === index));
+  slides.forEach((slide, i) => {
+    slide.classList.toggle("active", i === index);
+    const video = slide.querySelector("video");
+    if (!video) return;
+    if (i === index) video.play().catch(() => {});
+    else {
+      video.pause();
+      video.currentTime = 0;
+    }
+  });
 }
 
 function showSnapAt(index) {
@@ -259,6 +302,7 @@ function openSnapViewer(snapId) {
 
 function closeSnapViewer() {
   document.getElementById("snap-viewer").classList.remove("show");
+  document.querySelectorAll("#snap-viewer-track video").forEach((v) => v.pause());
   renderSnaps();
 }
 
@@ -446,7 +490,7 @@ function setupFeedTabs() {
 }
 
 // ============ VIEW SWITCHING (sidebar navigation) ============
-const VIEWS = ["home", "explore", "bookmarks", "analytics", "messages"];
+const VIEWS = ["home", "explore", "bookmarks", "analytics", "messages", "music"];
 
 function switchView(view) {
   currentView = view;
@@ -461,6 +505,7 @@ function switchView(view) {
   if (view === "explore") loadExplore().catch((err) => showToast(err.message));
   if (view === "bookmarks") loadBookmarks().catch((err) => showToast(err.message));
   if (view === "analytics") loadAnalytics().catch((err) => showToast(err.message));
+  if (view === "music") loadMusic().catch((err) => showToast(err.message));
   if (view === "messages") {
     loadConversations().catch((err) => showToast(err.message));
     renderConversationList();
@@ -469,7 +514,7 @@ function switchView(view) {
 }
 
 function setupSidebarNav() {
-  ["home", "explore", "bookmarks", "analytics", "messages"].forEach((view) => {
+  VIEWS.forEach((view) => {
     const el = document.getElementById(`nav-${view}`);
     if (el) el.addEventListener("click", () => switchView(view));
   });
@@ -614,6 +659,192 @@ async function submitCreatePost() {
   }
 }
 
+// ============ MUSIC FYP (discover + share music) ============
+async function loadMusic() {
+  const { tracks } = await api(`/music/feed?mode=${musicMode}`);
+  musicData = tracks;
+  renderMusicFeed();
+}
+
+function musicCardHtml(t) {
+  const isPlaying = currentTrackId === t.id && !musicAudio.paused;
+  return `
+    <div class="music-card${isPlaying ? " playing" : ""}" data-id="${t.id}">
+      <div class="music-cover">
+        ${t.cover ? `<img src="${t.cover}" alt="${escapeHtml(t.title)}">` : ""}
+        <div class="music-play-overlay"><i class="uil ${isPlaying ? "uil-pause" : "uil-play"}"></i></div>
+      </div>
+      <div class="music-info">
+        <div class="music-title">${escapeHtml(t.title)}</div>
+        <div class="music-artist">${escapeHtml(t.artist)}</div>
+        <div class="music-meta"><i class="uil uil-headphones-alt"></i> ${escapeHtml(t.plays)} plays</div>
+        ${t.badge ? `<div class="music-badge"><i class="uil ${t.badge.icon}"></i> ${escapeHtml(t.badge.label)}</div>` : ""}
+      </div>
+      <div class="music-actions">
+        <button class="music-action-btn like-action${t.liked ? " liked" : ""}"><i class="uil uil-heart"></i><span>${t.likes}</span></button>
+        <button class="music-action-btn share-action"><i class="uil uil-share-alt"></i><span>${t.shares}</span></button>
+      </div>
+    </div>`;
+}
+
+function renderMusicFeed() {
+  const el = document.getElementById("music-feed");
+  if (!el) return;
+  if (musicData.length === 0) {
+    el.innerHTML = `<div class="popup-empty">No tracks yet — be the first to share music</div>`;
+    return;
+  }
+  el.innerHTML = musicData.map(musicCardHtml).join("");
+
+  el.querySelectorAll(".music-card").forEach((node) => {
+    const id = Number(node.dataset.id);
+    node.querySelector(".music-cover").addEventListener("click", () => toggleTrackPlayback(id));
+
+    node.querySelector(".like-action").addEventListener("click", async () => {
+      try {
+        const { track } = await api(`/music/${id}/like`, { method: "POST" });
+        patchTrack(track);
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    node.querySelector(".share-action").addEventListener("click", () => openShareModal("track", id));
+  });
+}
+
+function patchTrack(updated) {
+  const idx = musicData.findIndex((t) => t.id === updated.id);
+  if (idx !== -1) musicData[idx] = { ...musicData[idx], ...updated };
+  renderMusicFeed();
+}
+
+function toggleTrackPlayback(id) {
+  const track = musicData.find((t) => t.id === id);
+  if (!track) return;
+
+  if (currentTrackId === id && !musicAudio.paused) {
+    musicAudio.pause();
+    renderMusicFeed();
+    updateMiniPlayer();
+    return;
+  }
+
+  if (currentTrackId !== id) {
+    musicAudio.src = track.audio;
+    currentTrackId = id;
+    api(`/music/${id}/play`, { method: "POST" })
+      .then(({ track: updated }) => patchTrack(updated))
+      .catch(() => {});
+  }
+  musicAudio.play().catch((err) => showToast("Couldn't play this track"));
+  renderMusicFeed();
+  updateMiniPlayer();
+}
+
+function updateMiniPlayer() {
+  const bar = document.getElementById("music-mini-player");
+  const track = musicData.find((t) => t.id === currentTrackId);
+  if (!track) {
+    bar.classList.remove("show");
+    return;
+  }
+  bar.classList.add("show");
+  document.getElementById("music-mini-cover-img").src = track.cover || "";
+  document.getElementById("music-mini-title").textContent = track.title;
+  document.getElementById("music-mini-artist").textContent = track.artist;
+  document.getElementById("music-mini-toggle").innerHTML = `<i class="uil ${musicAudio.paused ? "uil-play" : "uil-pause"}"></i>`;
+}
+
+function setupMusicTabs() {
+  document.querySelectorAll('[data-music-mode]').forEach((tab) => {
+    tab.addEventListener("click", async () => {
+      document.querySelectorAll('[data-music-mode]').forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      musicMode = tab.dataset.musicMode;
+      try {
+        await loadMusic();
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+  });
+}
+
+// ============ SHARE MUSIC / CREATE TRACK ============
+function openCreateTrackModal() {
+  document.getElementById("create-track-title").value = "";
+  document.getElementById("create-track-artist").value = "";
+  document.getElementById("create-track-audio-file").value = "";
+  document.getElementById("create-track-cover-file").value = "";
+  document.getElementById("create-track-audio-label").textContent = "Upload audio";
+  document.getElementById("create-track-cover-label").textContent = "Add cover art (optional)";
+  pendingTrackAudio = null;
+  pendingTrackCover = "";
+  document.getElementById("create-track-preview").classList.remove("show");
+  document.getElementById("create-track-modal").classList.add("show");
+  document.getElementById("create-track-title").focus();
+}
+
+function closeCreateTrackModal() {
+  document.getElementById("create-track-modal").classList.remove("show");
+}
+
+async function submitCreateTrack() {
+  const title = document.getElementById("create-track-title").value.trim();
+  const artist = document.getElementById("create-track-artist").value.trim();
+  if (!title) return showToast("Give your track a title");
+  if (!pendingTrackAudio) return showToast("Upload an audio file first");
+  try {
+    const { track } = await api("/music", {
+      method: "POST",
+      body: JSON.stringify({ title, artist, audio: pendingTrackAudio.url, cover: pendingTrackCover }),
+    });
+    closeCreateTrackModal();
+    musicData.unshift(track);
+    renderMusicFeed();
+    showToast("Music shared!");
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
+// ============ CREATE REEL ============
+function openCreateReelModal() {
+  document.getElementById("create-reel-title").value = "";
+  document.getElementById("create-reel-file").value = "";
+  pendingReelMedia = null;
+  const preview = document.getElementById("create-reel-preview");
+  preview.classList.remove("show");
+  document.getElementById("create-reel-preview-img").style.display = "none";
+  document.getElementById("create-reel-preview-video").style.display = "none";
+  document.getElementById("create-reel-modal").classList.add("show");
+  document.getElementById("create-reel-title").focus();
+}
+
+function closeCreateReelModal() {
+  document.getElementById("create-reel-modal").classList.remove("show");
+  document.getElementById("create-reel-preview-video").pause();
+}
+
+async function submitCreateReel() {
+  const title = document.getElementById("create-reel-title").value.trim();
+  if (!title) return showToast("Give your reel a title");
+  if (!pendingReelMedia) return showToast("Add a video or photo first");
+  try {
+    const { snap } = await api("/snaps", {
+      method: "POST",
+      body: JSON.stringify({ thumb: pendingReelMedia.url, title, type: pendingReelMedia.kind === "video" ? "video" : "image" }),
+    });
+    closeCreateReelModal();
+    snapsData.unshift(snap);
+    renderSnaps();
+    showToast("Reel posted!");
+  } catch (err) {
+    showToast(err.message);
+  }
+}
+
 // ============ QUOTE MODAL ============
 function openQuoteModal(postId) {
   closeAllRepostMenus();
@@ -659,9 +890,12 @@ function openShareModal(type, id) {
   if (type === "post") {
     const post = findPostById(id);
     shareableImage = post && (post.image || (post.quoted && post.quoted.image));
-  } else {
+  } else if (type === "snap") {
     const snap = snapsData.find((s) => s.id === id);
-    shareableImage = snap && snap.thumb;
+    shareableImage = snap && snap.type !== "video" && snap.thumb;
+  } else if (type === "track") {
+    const track = musicData.find((t) => t.id === id);
+    shareableImage = track && track.cover;
   }
   document.getElementById("share-add-story").disabled = !shareableImage;
 
@@ -706,9 +940,10 @@ function renderShareContacts() {
 
 async function shareRequest(body) {
   const { type, id } = sharingTarget;
-  const endpoint = type === "post" ? `/posts/${id}/share` : `/snaps/${id}/share`;
+  const endpoint = type === "post" ? `/posts/${id}/share` : type === "track" ? `/music/${id}/share` : `/snaps/${id}/share`;
   const data = await api(endpoint, { method: "POST", body: JSON.stringify(body) });
   if (type === "post") patchPostEverywhere(data.post);
+  else if (type === "track") patchTrack(data.track);
   else patchSnap(data.snap);
 }
 
@@ -1098,6 +1333,19 @@ function setupSocket() {
   });
 }
 
+musicAudio.addEventListener("play", () => {
+  renderMusicFeed();
+  updateMiniPlayer();
+});
+musicAudio.addEventListener("pause", () => {
+  renderMusicFeed();
+  updateMiniPlayer();
+});
+musicAudio.addEventListener("ended", () => {
+  renderMusicFeed();
+  updateMiniPlayer();
+});
+
 // ============ THEME ============
 const THEMES = [
   { id: "light", name: "Light", color: "#1877f2" },
@@ -1105,6 +1353,10 @@ const THEMES = [
   { id: "sunset", name: "Sunset", color: "#ee2a7b" },
   { id: "ocean", name: "Ocean", color: "#0ea5a4" },
   { id: "forest", name: "Forest", color: "#2e7d32" },
+  { id: "dark-pink", name: "Dark Pink", color: "#f637a3" },
+  { id: "dark-purple", name: "Dark Purple", color: "#a855f7" },
+  { id: "dark-green", name: "Dark Green", color: "#2fd671" },
+  { id: "dark-red", name: "Dark Red", color: "#f24545" },
 ];
 
 function applyTheme(theme) {
@@ -1202,6 +1454,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupSocket();
   setupNavProfile();
   setupFeedTabs();
+  setupMusicTabs();
   setupSidebarNav();
   setupPopupToggle("#notifications", ".notifications-popup");
   setupPopupToggle("#theme", ".theme-popover");
@@ -1299,6 +1552,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (sharingTarget.type === "post") {
       const post = findPostById(sharingTarget.id);
       img = post && (post.image || (post.quoted && post.quoted.image));
+    } else if (sharingTarget.type === "track") {
+      const track = musicData.find((t) => t.id === sharingTarget.id);
+      img = track && track.cover;
     } else {
       const snap = snapsData.find((s) => s.id === sharingTarget.id);
       img = snap && snap.thumb;
@@ -1326,5 +1582,92 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("settings-password-form").addEventListener("submit", (e) => {
     e.preventDefault();
     submitPasswordChange();
+  });
+
+  // ---- Create Reel ----
+  document.getElementById("open-create-reel").addEventListener("click", openCreateReelModal);
+  document.getElementById("create-reel-close").addEventListener("click", closeCreateReelModal);
+  document.getElementById("create-reel-modal").addEventListener("click", (e) => {
+    if (e.target.id === "create-reel-modal") closeCreateReelModal();
+  });
+  document.getElementById("create-reel-submit").addEventListener("click", submitCreateReel);
+  document.getElementById("create-reel-file").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const { url, kind } = await uploadMedia(file);
+      pendingReelMedia = { url, kind };
+      const previewImg = document.getElementById("create-reel-preview-img");
+      const previewVideo = document.getElementById("create-reel-preview-video");
+      if (kind === "video") {
+        previewVideo.src = url;
+        previewVideo.style.display = "block";
+        previewImg.style.display = "none";
+        previewVideo.play().catch(() => {});
+      } else {
+        previewImg.src = url;
+        previewImg.style.display = "block";
+        previewVideo.style.display = "none";
+      }
+      document.getElementById("create-reel-preview").classList.add("show");
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
+  document.getElementById("create-reel-preview-remove").addEventListener("click", () => {
+    pendingReelMedia = null;
+    document.getElementById("create-reel-file").value = "";
+    document.getElementById("create-reel-preview").classList.remove("show");
+    document.getElementById("create-reel-preview-video").pause();
+  });
+
+  // ---- Share Music / Create Track ----
+  document.getElementById("open-create-track").addEventListener("click", openCreateTrackModal);
+  document.getElementById("create-track-close").addEventListener("click", closeCreateTrackModal);
+  document.getElementById("create-track-modal").addEventListener("click", (e) => {
+    if (e.target.id === "create-track-modal") closeCreateTrackModal();
+  });
+  document.getElementById("create-track-submit").addEventListener("click", submitCreateTrack);
+  document.getElementById("create-track-audio-file").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const { url, kind } = await uploadMedia(file);
+      if (kind !== "audio") {
+        showToast("Please choose an audio file");
+        e.target.value = "";
+        return;
+      }
+      pendingTrackAudio = { url, kind };
+      document.getElementById("create-track-audio-label").textContent = file.name;
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
+  document.getElementById("create-track-cover-file").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const url = await uploadImage(file);
+      pendingTrackCover = url;
+      document.getElementById("create-track-cover-label").textContent = file.name;
+      document.getElementById("create-track-preview-img").src = url;
+      document.getElementById("create-track-preview").classList.add("show");
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
+
+  // ---- Music mini player ----
+  document.getElementById("music-mini-toggle").addEventListener("click", () => {
+    if (currentTrackId === null) return;
+    toggleTrackPlayback(currentTrackId);
+  });
+  document.getElementById("music-mini-close").addEventListener("click", () => {
+    musicAudio.pause();
+    musicAudio.src = "";
+    currentTrackId = null;
+    renderMusicFeed();
+    updateMiniPlayer();
   });
 });
